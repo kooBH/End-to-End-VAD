@@ -5,7 +5,7 @@ from utils import utils as utils
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, default='', help='Torch state file to convert into Torchscript')
+    parser.add_argument('--input', type=str, default='/home/nas/kbh/End-to-End-VAD/saved_models/Video\\acc_76.174_epoch_019_arch_Video_model.pkl', help='Torch state file to convert into Torchscript')
     parser.add_argument('--output', type=str, default='traced_state.pt', help='The name of output file')
     args = parser.parse_args()
 

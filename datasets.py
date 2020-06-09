@@ -7,7 +7,7 @@ import math
 import pickle
 from utils.NoiseInjection import *
 import skvideo
-skvideo.setFFmpegPath('C:/Deep/Tools/ffmpeg/bin/')
+skvideo.setFFmpegPath("./ffmpeg-2.5.3")
 import skvideo.io
 import torchvision.transforms
 import re
@@ -123,114 +123,6 @@ def get_video_ground_truth(speaker,video_length):
 
     return gt
 
-class AudioDataset(Dataset):
-
-    """Dataset Class for Loading audio files"""
-
-    def __init__(self, DataDir, timeDepth, is_train):
-        """
-        Args:
-        DataDir (string): Directory with all the data.
-        timeDepth: Number of frames to be loaded in a sample
-        is_train(bool): Is train or test dataset
-        """
-        import json
-        with open('./params/audio_dataset_params.json', 'r') as f:
-            params = json.load(f)
-
-        self.DataDir = DataDir
-        self.is_train = is_train
-        self.timeDepth = timeDepth
-
-        self.Audio_frame_Length = params["Audio_frame_Length"]
-        self.sampling_rate = params["sampling_rate"]
-        self.GlobalFrameRate = params["GlobalFrameRate"]
-        self.audio_duration = params["audio_duration"]
-        self.noise_prob = params["noise_prob"]
-        self.trans_prob = params["trans_prob"]
-
-        self.audio_len_in_frames = math.floor(self.audio_duration * self.sampling_rate / self.Audio_frame_Length)
-        self.normalize = True
-
-        # init noise injector
-        self.noiseInjector = NoiseInjection(Noise_path='data/noises/',
-                                             transient_path='data/transients/',
-                                             sample_length=self.timeDepth * self.Audio_frame_Length,
-                                             sample_rate=self.sampling_rate,
-                                             SNR=(0, 20))
-
-        raw_audio = [x for x in os.listdir(self.DataDir) if ".wav" in x]
-
-        labels_stack = []
-        labels_pkl_file = os.path.join(self.DataDir, "audio_labels.pkl")
-
-        if not os.path.exists(labels_pkl_file):
-
-            if not os.path.exists(self.DataDir + 'samples'):
-                os.makedirs(self.DataDir + 'samples')
-
-            piece_num = 0
-            for i ,f in enumerate(raw_audio):
-                print("processing audio file %s" % f)
-                full_path = os.path.join(self.DataDir,f)
-                audio, Fs = librosa.load(full_path,sr=self.sampling_rate,duration=self.audio_duration)
-                if self.normalize:
-                    audio = librosa.util.normalize(audio)
-                SpeakerNum = re.findall('\d+', f)
-                labels = get_audio_ground_truth("Speaker%s" % SpeakerNum[0], self.GlobalFrameRate, self.audio_duration)
-
-                for end_frame in range(self.timeDepth,self.audio_len_in_frames):
-                    audio_seq = audio[(end_frame - self.timeDepth) * self.Audio_frame_Length:end_frame * self.Audio_frame_Length]
-
-                    if not self.is_train: # at test add noises and trans only once for consistency
-                        add_noise = np.random.binomial(1, self.noise_prob)
-                        add_trans = np.random.binomial(1, self.trans_prob)
-
-                        if add_noise:
-                            audio_seq = self.noiseInjector.inject_noise_sample(audio_seq)
-
-                        if add_trans:
-                            audio_seq = self.noiseInjector.inject_trans_sample(audio_seq)
-
-                    audio_path = self.DataDir + 'samples/sample_' + str(piece_num) + '.wav'
-                    librosa.output.write_wav(audio_path, audio_seq, sr=self.sampling_rate)
-                    piece_num += 1
-
-                    label = torch.LongTensor(1)
-                    label[0] = int(labels[end_frame])
-                    labels_stack.append(label)
-
-            labels_dump = open(labels_pkl_file, 'wb')
-            pickle.dump(labels_stack, labels_dump)
-
-        labels = open(labels_pkl_file, 'rb')
-        labels = pickle.load(labels)
-
-        self.audio_labels = np.ravel(np.array(labels))
-
-    def __len__(self):
-        return len(self.audio_labels)
-
-    def __getitem__(self, idx):
-
-        audio_path = self.DataDir + 'samples/sample_' + str(idx) + '.wav'
-        Fs, audio = scp.read(audio_path)
-
-        # at train randomly add noises and trans
-        if self.noiseInjector and self.is_train:
-            add_noise = np.random.binomial(1, self.noise_prob)
-            add_trans = np.random.binomial(1, self.trans_prob)
-
-            if add_noise:
-                audio = self.noiseInjector.inject_noise_sample(audio)
-
-            if add_trans:
-                audio = self.noiseInjector.inject_trans_sample(audio)
-
-        sample = torch.from_numpy(audio).type(torch.FloatTensor)
-        return sample, self.audio_labels[idx]
-
-
 class VideoDataset(Dataset):
 
     """Dataset Class for Loading video files"""
@@ -315,27 +207,3 @@ class VideoDataset(Dataset):
         return sample, self.video_labels[idx]
 
 
-class AVDataset(Dataset):
-
-    """Dataset Class for Loading audio & video files"""
-
-    def __init__(self, DataDir, timeDepth,is_train):
-        """
-        Args:
-        DataDir (string): Directory with all the data.
-        timeDepth: Number of frames to be loaded in a sample
-        is_train(bool): Is train or test dataset
-        """
-
-        self.audio_dataset = AudioDataset(DataDir=DataDir, timeDepth=timeDepth, is_train=is_train)
-        self.video_dataset = VideoDataset(DataDir=DataDir, timeDepth=timeDepth, is_train=is_train)
-
-    def __len__(self):
-        return len(self.audio_dataset)
-
-    def __getitem__(self, idx):
-
-        audio_sample, audio_label = self.audio_dataset.__getitem__(idx)
-        video_sample, video_label = self.video_dataset.__getitem__(idx)
-        av_label = audio_label | video_label
-        return audio_sample, video_sample, av_label
