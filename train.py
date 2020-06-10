@@ -268,6 +268,7 @@ if __name__ == '__main__':
 
         if epoch % args.save_freq == 0:
             checkpoint_name = "%s\\acc_%.3f_epoch_%03d_arch_%s.pkl" % (save_dir, accuracy, epoch, args.arch)
+            state_name = "%s\\acc_%.3f_epoch_%03d_arch_%s.pkl" %(save_dir,accuracy,epoch,args.arch)
             utils.save_checkpoint(state={
                 'epoch': epoch,
                 'arch': args.arch,
@@ -279,3 +280,4 @@ if __name__ == '__main__':
             model_name = "%s\\acc_%.3f_epoch_%03d_arch_%s_model.pkl" % (save_dir, accuracy, epoch, args.arch)
 
             torch.save(net, model_name)
+            torch.save(net.state_dict(),state_name)
