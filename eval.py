@@ -14,7 +14,9 @@ import numpy as np
 if __name__ == '__main__':
 
     # Hyper Parameters
+    parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=16, help='training batch size')
+    parser.add_argument('--test_batch_size', type=int, default=16, help='test batch size')
     parser.add_argument('--time_depth', type=int, default=15, help='number of time frames in each video\audio sample')
     parser.add_argument('--workers', type=int, default=0, help='num workers for data loading')
     parser.add_argument('--print_freq', type=int, default=50, help='freq of printing stats')
@@ -23,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_mcb', action='store_true', help='wether to use MCB or concat')
     parser.add_argument('--mcb_output_size', type=int, default=1024, help='the size of the MCB outputl')
     parser.add_argument('--debug', action='store_true', help='print debug outputs')
-    parser.add_argument('--arch', type=str, default='AV', help='which modality to train - Video\Audio\AV')
+    parser.add_argument('--arch', type=str, default='Video', help='which modality to train - Video\Audio\AV')
     parser.add_argument('--pre_train', type=str, default='', help='path to the pre-trained network')
     args = parser.parse_args()
     print(args, end='\n\n')
@@ -106,4 +108,4 @@ if __name__ == '__main__':
             print('Test: [{0}/{1}]'.format(i, len(test_loader)))
 
     print('Test finished.')
-    print('final loss on test set is {} and final accuracy is {}'.format(loss_test.avg,top1_test.avg))
+    print('final loss on test set is {} and final accuracy is {}'.format(test_loss.avg,test_acc.avg))

@@ -53,3 +53,4 @@ class DeepVAD_audio(nn.Module):
         else:
             return (Variable(torch.zeros(self.lstm_layers, self.test_batch_size, self.lstm_hidden_size)).cuda(),
                     Variable(torch.zeros(self.lstm_layers, self.test_batch_size, self.lstm_hidden_size)).cuda())
+

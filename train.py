@@ -31,7 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--mcb_output_size', type=int, default=1024, help='the size of the MCB outputl')
     parser.add_argument('--debug', action='store_true', help='print debug outputs')
     parser.add_argument('--freeze_layers', action='store_true', help='wether to freeze the first layers of the model')
-    parser.add_argument('--arch', type=str, default='AV', choices=['Audio', 'Video', 'AV'], help='which modality to train - Video\Audio\Multimodal')
+    parser.add_argument('--arch', type=str, default='Video', choices=['Video'], help='which modality to train - Video\Audio\Multimodal')
     parser.add_argument('--pre_train', type=str, default='', help='path to a pre-trained network')
 
     args = parser.parse_args()
