@@ -44,10 +44,7 @@ if __name__ == '__main__':
         os.makedirs('logs')
     logger = Logger('logs')
 
-    # create a saved models folder
-    save_dir = os.path.join('saved_models', args.arch)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+    save_dir = '/home/nas/user/kbh/End-to-End-VAD/saved_models'
 
     # create train + val datasets
     dataset = utils.import_dataset(args)
@@ -267,8 +264,8 @@ if __name__ == '__main__':
         print('Best accuracy so far is: {}% , at epoch #{}'.format(best_accuracy,best_epoch))
 
         if epoch % args.save_freq == 0:
-            checkpoint_name = "%s\\acc_%.3f_epoch_%03d_arch_%s.pkl" % (save_dir, accuracy, epoch, args.arch)
-            state_name = "%s\\acc_%.3f_epoch_%03d_arch_%s.pkl" %(save_dir,accuracy,epoch,args.arch)
+            checkpoint_name = "%s/acc_%.3f_epoch_%03d_arch_%s_check.pkl" % (save_dir, accuracy, epoch, args.arch)
+            state_name = "%s/acc_%.3f_epoch_%03d_arch_%s_state.pkl" %(save_dir,accuracy,epoch,args.arch)
             utils.save_checkpoint(state={
                 'epoch': epoch,
                 'arch': args.arch,
@@ -277,7 +274,7 @@ if __name__ == '__main__':
                 'best_accuracy': best_accuracy,
                 'optimizer': optimizer.state_dict(),
             }, is_best=is_best,best_accuracy=best_accuracy,filename=checkpoint_name)
-            model_name = "%s\\acc_%.3f_epoch_%03d_arch_%s_model.pkl" % (save_dir, accuracy, epoch, args.arch)
+            model_name = "%s/acc_%.3f_epoch_%03d_arch_%s_model.pkl" % (save_dir, accuracy, epoch, args.arch)
 
             torch.save(net, model_name)
             torch.save(net.state_dict(),state_name)

@@ -1,22 +1,16 @@
 import cv2
 import torch
+import torchvision.transforms
+import numpy as np
 from utils import utils as utils
 import argparse
-
-def init_hidden(is_train):
-    if is_train:
-        return (Variable(torch.zeros(self.lstm_layers, self.batch_size, self.lstm_hidden_size)).cuda(),
-                Variable(torch.zeros(self.lstm_layers, self.batch_size, self.lstm_hidden_size)).cuda())
-    else:
-        return (Variable(torch.zeros(self.lstm_layers, self.test_batch_size, self.lstm_hidden_size)).cuda(),
-                    Variable(torch.zeros(self.lstm_layers, self.test_batch_size, self.lstm_hidden_size)).cuda())
 
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--arch', type=str, default='Video', help='which modality to train - Video\Audio\AV')
-    parser.add_argument('--batch_size', type=int, default=16, help='training batch size')
-    parser.add_argument('--test_batch_size', type=int, default=16, help='test batch size')
+    parser.add_argument('--batch_size', type=int, default=1, help='training batch size')
+    parser.add_argument('--test_batch_size', type=int, default=1, help='test batch size')
     parser.add_argument('--lstm_layers', type=int, default=2, help='number of lstm layers in the model')
     parser.add_argument('--lstm_hidden_size', type=int, default=1024, help='number of neurons in each lstm layer in the model')
     parser.add_argument('--debug', action='store_true', help='print debug outputs')
@@ -24,26 +18,47 @@ if __name__=='__main__':
 
     # Load Model
     net = utils.import_network(args)
-    net.load_state_dict(torch.load('/home/nas/user/kbh/End-to-End-VAD/saved_models/batch16/acc_75.123_epoch_000_arch_Video_state.pkl'))
+    net.load_state_dict(torch.load('/home/nas/user/kbh/End-to-End-VAD/saved_models/batch16/acc_76.314_epoch_040_arch_Video_state.pkl'))
     net.eval()
-    states= net.init_hidden(is_train=False)
 
+    # Opencv image params
     #cap = cv2.VideoCapture(0)   # 0: default camera
     cap = cv2.VideoCapture("./data/Speaker1.avi") #동영상 파일에서 읽기
-
     font  = cv2.FONT_HERSHEY_SIMPLEX
-    fontScale = 3
+    fontScale = 0.8
 
-    batchSize = 16
+    # model params
+    batchSize = 1
     timeDepth=15
     channels = 3
     size = 224
 
+    # Opencv video params
+    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    fps = 15
+    outputVid = cv2.VideoWriter('/home/nas/user/kbh/End-to-End-VAD/output.avi',fourcc,fps,(size,size))
+
+    # Misc
     video_duration_in_frames = 3059
 
+    #### Prep for Model ####
+
+    normalize = torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                             std=[0.229, 0.224, 0.225])
+
+    t = torchvision.transforms.Compose([
+                torchvision.transforms.ToPILImage(),
+                torchvision.transforms.Resize((224, 224)),
+                torchvision.transforms.ToTensor(),
+                normalize,
+            ])
+
+    states= net.init_hidden(is_train=False)
 
     modelInput = torch.ones(batchSize,timeDepth,channels,size,size)
     idx=0
+
+    print('START')
      
     while cap.isOpened():
         # 카메라 프레임 읽기
@@ -52,43 +67,49 @@ if __name__=='__main__':
         if success:
             # resize
             frame = cv2.resize(frame, dsize=(size, size), interpolation=cv2.INTER_AREA)   
-
             # frame.shape : height , width, channel
             h = frame.shape[0]
             w = frame.shape[1]
 
+            # channel, height, width
+            tensorFrame = np.transpose(frame,(2,0,1))
+#            tensorFrame = t(tensorFrame)
+
             # Convert to Tensor
+            tensorFrame = torch.cuda.FloatTensor(tensorFrame)
+            #tensorFrame = tensorFrame.to('cuda')
+            #tensorFrame = tensorFrame.permute(2,0,1)
 
-            tensorFrame = torch.cuda.FloatTensor(frame)
-            tensorFrame = tensorFrame.permute(2,0,1)
+            if idx >=15:
+                for i in range(14):
+                    modelInput[0,i,:,:,:]=modelInput[0,i+1,:,:,:]
 
-            for i in range(max(idx,15)):
-                modelInput[0,idx,:,:,:] = tensorFrame
+            i = min(idx,14)
+            modelInput[0,i,:,:,:] = tensorFrame
 
-            
-            frame = cv2.putText(frame,"AA",(0,h),font,fontScale,(0,255,0),2)
-            cv2.imshow('Camera Window', frame)
-
-            # ESC를 누르면 종료
-            key = cv2.waitKey(50) & 0xFF
-            if (key == 27): 
-                break
-
+            oupput=''
             idx=idx+1
-            print(idx)
+            if idx >= 15 :
+                output = net(modelInput.cuda(),states)
+                output = output.to('cpu')
+                outputString = '%f, %f'%(output.data[0][0].item(),output.data[0][1].item())
+                frame = cv2.putText(frame,outputString,(0,h),font,fontScale,(0,255,0),2)
+                print(str(idx)+' %f %f'%(output.data[0][0].item(),output.data[0][1].item()))
 
-            if idx == 15 :
-                break;
 
+            outputVid.write(frame)
+
+            if idx >= 3059 :
+                break
+     
     # Compose
-
+           
     # Run Model
-    output = net(modelInput.cuda(),states)
-    print(output)
-
-
-
+                
     cap.release()
-    cv2.destroyAllWindows()
+    outputVid.release()
+
+              
+
 
 

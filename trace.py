@@ -6,7 +6,7 @@ from utils import utils as utils
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, default='/home/nas/kbh/End-to-End-VAD/saved_models/acc_75.123_epoch_000_arch_Video_state.pkl', help='Torch state file to convert into Torchscript')
+    parser.add_argument('--input', type=str, default='/home/nas/user/kbh/End-to-End-VAD/saved_models/acc_75.123_epoch_000_arch_Video_state.pkl', help='Torch state file to convert into Torchscript')
     parser.add_argument('--output', type=str, default='traced_state.pt', help='The name of output file')
 
     # Netwrok args
