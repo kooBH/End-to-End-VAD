@@ -39,7 +39,12 @@ class DeepVAD_video(nn.Module):
             weights_init_normal(m, mean=mean, std=std)
 
     def forward(self, x, h):
-        batch,frames,channels,height,width = x.squeeze().size()
+
+        #batch,frames,channels,height,width = x.squeeze().size()
+        #print(x.squeeze().size())
+        #print(x.size())
+        batch,frames,channels,height,width = x.size()
+
         # Reshape to (batch * seq_len, channels, height, width)
         x = x.view(batch*frames,channels,height,width)
         x = self.features(x).squeeze() # output shape - Batch X Features X seq len

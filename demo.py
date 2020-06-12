@@ -23,7 +23,7 @@ if __name__=='__main__':
 
     # Opencv image params
     #cap = cv2.VideoCapture(0)   # 0: default camera
-    cap = cv2.VideoCapture("./data/Speaker1.avi") #동영상 파일에서 읽기
+    cap = cv2.VideoCapture('/home/nas/user/kbh/End-to-End-VAD/data/Speaker11.avi')
     font  = cv2.FONT_HERSHEY_SIMPLEX
     fontScale = 0.8
 
@@ -35,7 +35,7 @@ if __name__=='__main__':
 
     # Opencv video params
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    fps = 15
+    fps = 30
     outputVid = cv2.VideoWriter('/home/nas/user/kbh/End-to-End-VAD/output.avi',fourcc,fps,(size,size))
 
     # Misc
@@ -72,12 +72,12 @@ if __name__=='__main__':
             w = frame.shape[1]
 
             # channel, height, width
-            tensorFrame = np.transpose(frame,(2,0,1))
-#            tensorFrame = t(tensorFrame)
+#            tensorFrame = np.transpose(frame,(2,0,1))
+            tensorFrame = t(frame)
 
             # Convert to Tensor
-            tensorFrame = torch.cuda.FloatTensor(tensorFrame)
-            #tensorFrame = tensorFrame.to('cuda')
+#            tensorFrame = torch.cuda.FloatTensor(tensorFrame)
+            tensorFrame = tensorFrame.to('cuda')
             #tensorFrame = tensorFrame.permute(2,0,1)
 
             if idx >=15:
@@ -92,15 +92,22 @@ if __name__=='__main__':
             if idx >= 15 :
                 output = net(modelInput.cuda(),states)
                 output = output.to('cpu')
-                outputString = '%f, %f'%(output.data[0][0].item(),output.data[0][1].item())
-                frame = cv2.putText(frame,outputString,(0,h),font,fontScale,(0,255,0),2)
-                print(str(idx)+' %f %f'%(output.data[0][0].item(),output.data[0][1].item()))
 
+                output_1 = output.data[0][0].item()
+                output_2 = output.data[0][1].item()
+
+                outputString = '%f, %f'%(output_1,output_2)
+                frame = cv2.putText(frame,outputString,(0,h),font,fontScale,(0,255,0),2)
+                if output_2 > 0.9 : 
+                    frame = cv2.putText(frame,'O',(10,20),font,fontScale,(0,0,255),2)
+                else :
+                    frame = cv2.putText(frame,'X',(10,20),font,fontScale,(0,0,255),2)
+                print(str(idx)+' %f %f'%(output_1,output_2))
 
             outputVid.write(frame)
 
-            if idx >= 3059 :
-                break
+            #if idx >= video_duration_in_frames :
+             #   break
      
     # Compose
            
