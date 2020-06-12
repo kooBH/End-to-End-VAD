@@ -23,7 +23,7 @@ if __name__=='__main__':
 
     # Opencv image params
     #cap = cv2.VideoCapture(0)   # 0: default camera
-    cap = cv2.VideoCapture('/home/nas/user/kbh/End-to-End-VAD/data/Speaker11.avi')
+    cap = cv2.VideoCapture('/home/nas/user/kbh/End-to-End-VAD/data/Speaker8.avi')
     font  = cv2.FONT_HERSHEY_SIMPLEX
     fontScale = 0.8
 
@@ -108,6 +108,8 @@ if __name__=='__main__':
 
             #if idx >= video_duration_in_frames :
              #   break
+        else :
+            break;
      
     # Compose
            
