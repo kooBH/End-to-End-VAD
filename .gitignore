@@ -5,4 +5,8 @@ ffmpeg-2.5.3/
 __pycache__
 logs/
 
+<<<<<<< HEAD
 saved_models/
+=======
+build/
+>>>>>>> ae5b210a144c8c6f66d22506526162387d521a94
