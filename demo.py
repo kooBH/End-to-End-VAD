@@ -110,11 +110,9 @@ if __name__=='__main__':
              #   break
         else :
             break;
-     
     # Compose
            
     # Run Model
-                
     cap.release()
     outputVid.release()
 

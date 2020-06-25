@@ -162,6 +162,10 @@ class VideoDataset(Dataset):
                 print("processing video file %s" % f)
                 full_path = os.path.join(self.DataDir,f)
                 video = skvideo.io.vread(full_path)
+                """
+                ndarray of dimension (T, M, N, C), where T is the number of frames, M is the height, 
+                N is width, and C is depth.
+                """
                 T, M, N, C = video.shape
                 video = video[:self.video_duration_in_frames, :, :, :]
                 video_tensor = torch.FloatTensor(self.video_duration_in_frames,C,224,224)
